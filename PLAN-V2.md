@@ -195,6 +195,46 @@ caching cost more than it saved. We kept it reverted rather than keep something 
 because someone else's project uses it. One small, free piece from the same research did stay — a Yarn
 setting that makes install files slightly smaller and faster to write, with no downside either way.
 
+## 8. Checked directly: do the real unit tests actually run, or does the gate just build and skip?
+
+You asked this one directly, and it's worth answering with the actual log output, not a guess. "Test (if
+present)" is one step in `fast-checks` — did it ever genuinely execute a test suite, or has it only ever
+hit the "no test script" branch? Went back through the real logs from tests we'd already run, not new
+ones, to check.
+
+**Yes, real tests run and pass.** Confirmed directly in the logs, not inferred from the exit code:
+
+- `Temporal` — 21 tests, 0 failures. Log line: `# pass 21`, `# fail 0`.
+  [fast-checks (temporal-worker)](https://github.com/Bharat-Tech-Labs/Enterprise-Search/actions/runs/37737221510/job/113179503517).
+- `mcp-auth-core` — 26 tests, 0 failures. Log line: `# tests 26`, `# pass 26`.
+  [fast-checks (mcp-auth-core)](https://github.com/Bharat-Tech-Labs/Enterprise-Search/actions/runs/37333392070/job/111841997643).
+- `rules-service` — 2 tests, 0 failures. Log line: `# tests 2`, `# pass 2`. (This one we'd assumed had no
+  tests at all until checking — it does.)
+  [fast-checks (rules-service)](https://github.com/Bharat-Tech-Labs/Enterprise-Search/actions/runs/37642875051/job/112865981195).
+
+**`conflict-types` is the interesting case — its test step runs, but fails, which is different from
+being skipped.** The log shows it genuinely attempting `node --test`, then hitting the known Node-version
+bug (see section 5 above): `Could not find '.../packages/conflict-types/src/**/*.test.ts'`. Not silently
+bypassed — a real attempt that fails for an environment reason.
+[fast-checks (conflict-types)](https://github.com/Bharat-Tech-Labs/Enterprise-Search/actions/runs/37642875051/job/112865981401).
+
+**Why `mcp-auth-core` works and `conflict-types` doesn't, for what looks like the same kind of command:**
+`conflict-types`'s test script wraps its file pattern in quotes (`'src/**/*.test.ts'`), which hands the
+raw pattern to Node's own, older glob matching. `mcp-auth-core`'s script leaves it unquoted
+(`src/**/*.test.ts`), so the shell expands it into real filenames before Node ever sees a pattern to
+resolve on its own. Small detail, real difference, worth having on record rather than lumping both
+failures together.
+
+**Where "no test script, skipping" is correct, not a gap:** `UI`, `BullBoard`, `StrapiMCP`,
+`rules-studio`, and every `workers/*` service have no test script at all — the gate reporting that
+accurately reflects that no tests exist there yet, not something the gate is missing.
+
+**Still open, honestly:** `databonder-mcp`, `packages/amendment-resolver`, and `packages/calculated-fields`
+all have real test scripts too, but none of them has ever been selected as its own matrix entry in an
+actual CI run across this whole project — only pre-built as a dependency of something else, or run
+locally by hand early on. Not claiming these are proven in CI; flagging it as the one piece of this
+specific question still unverified.
+
 ## What's still open, and whose call it is
 
 - The 14-of-18-Dockerfiles-need-cloud-credentials blocker from round one is unchanged — still needs a

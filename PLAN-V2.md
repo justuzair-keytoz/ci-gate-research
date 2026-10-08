@@ -101,6 +101,27 @@ it through all three outcomes for real:
 
 Both PRs are still open. You can read the real run history on them yourself.
 
+**One more thing worth checking, and we did: does a Docker build on a stacked PR only reflect what that
+PR itself changed, or does it pick up everything from the whole stack?** The three tests above only
+touched a harmless doc file and a registration-check break — nothing that builds a Docker image. So we
+went back and tested that specifically, on the same two PRs:
+
+- Touched `StrapiMCP` (has its own Dockerfile) on the **root** PR (`#346`) only — only
+  `docker-build (strapi-mcp)` ran, nothing else. Commit `5b8a2cd5`,
+  [run 37746441142](https://github.com/Bharat-Tech-Labs/Enterprise-Search/actions/runs/37746441142).
+- Touched `Temporal` (a different Dockerfile) on the **child** PR (`#347`), stacked on top — only
+  `docker-build (temporal-worker)` ran. Critically, `strapi-mcp` did **not** build again, even though
+  that file already existed in the child's tree (inherited from the root once merged in) — proving the
+  child's diff is computed against its own parent, not against `main`, the same way the earlier fast-checks
+  proof already showed. Commit `1bcf6277`,
+  [run 37746553360](https://github.com/Bharat-Tech-Labs/Enterprise-Search/actions/runs/37746553360).
+
+One honest side effect: touching `StrapiMCP` re-triggered its already-documented pre-existing lockfile bug
+(see round one) — not a new issue, just an old one firing again because that file got touched. Both test
+commits were reverted afterward (`5c1e3cde` on root, `b63d5e5a` on child, re-synced into the child with
+`b4f603d9`) so both PRs are back to clean and green — the proof lives in the two run links above, not in
+the PRs' current diff.
+
 ## 4. A real bug we found by accident: shared packages were never built before the things that use them
 
 This wasn't something we planned to fix — we found it the moment #1 above actually worked for the first

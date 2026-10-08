@@ -1,0 +1,4 @@
+# Reference-only clones of OSS repos used for research - not ours to publish,
+# already public elsewhere, and large (800MB+). Not part of the deliverable.
+tmp/
+.DS_Store

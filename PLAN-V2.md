@@ -20,6 +20,37 @@ taken on faith.
 - This file — what we actually built from that research, in order, with the commits and runs that prove
   each piece works.
 
+## 0. Why a custom script instead of Nx, Turborepo, or a marketplace action
+
+Asked directly in the senior review, and it's a fair question that wasn't answered anywhere visible
+before this. Short version: Nx's `affected` and Turborepo's `--affected`/`--filter` genuinely do
+understand dependents via a real project graph — this isn't a capability gap, they'd technically work.
+The reason we didn't adopt either is cost versus benefit, specifically for this repo.
+
+Adopting Nx or Turborepo means bringing in an entire build system — its own task-running model, its own
+cache, its own config format (`nx.json`/`turbo.json`) the whole team has to learn — and this repo has
+neither today (confirmed directly, no such file anywhere in the tree). That's a much bigger lift than
+writing one ~250-line script that does exactly the one thing needed: read `package.json` files, build a
+dependents graph, emit a matrix.
+
+The stronger piece of evidence, found during the OSS research pass and not fully folded back into this
+summary until now: `vercel/next.js` — built by Turborepo's own creator — has a real `turbo.json` and uses
+Turborepo actively for other things in its own repo, and **still doesn't use `turbo run --affected` for
+its own PR-gating decisions** (`v2/oss/nextjs-analysis.md` §1). `calcom/cal.com` is the same — Turborepo
+for build caching, but a hand-written `dorny/paths-filter` config for change detection
+(`v2/oss/calcom-analysis.md` §2, §6). If the company that makes Turborepo doesn't reach for it to solve
+this exact problem in its own repo, adopting it here specifically for that purpose isn't the obvious win
+it looks like on paper — it's a real, observed pattern across multiple large projects, not a guess.
+
+`langchain-ai/langchain`'s `check_diff.py` was the direct precedent for the *shape* this script takes —
+a custom script, not a marketplace action, with its own dependents-graph logic
+(`v2/oss/langchain-analysis.md` §2). Python specifically because the actual work is parsing JSON
+manifests and building a graph from them, which the standard library does cleanly in a few lines — the
+equivalent in bash/`jq` chains gets unreadable fast once you're building graphs and set unions, not just
+pulling one field out of one file.
+
+This same explanation now lives as a comment at the top of `detect-services.py` itself, not just here.
+
 ## 1. A shared package change now tests everyone who actually uses it
 
 **The problem:** the gate only re-tested a service if you touched that service's own folder. If you

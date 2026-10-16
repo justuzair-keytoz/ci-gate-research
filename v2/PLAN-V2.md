@@ -140,12 +140,19 @@ went back and tested that specifically, on the same two PRs:
 - Touched `StrapiMCP` (has its own Dockerfile) on the **root** PR (`#346`) only — only
   `docker-build (strapi-mcp)` ran, nothing else. Commit `5b8a2cd5`,
   [run 37746441142](https://github.com/Bharat-Tech-Labs/Enterprise-Search/actions/runs/37746441142).
-- Touched `Temporal` (a different Dockerfile) on the **child** PR (`#347`), stacked on top — only
-  `docker-build (temporal-worker)` ran. Critically, `strapi-mcp` did **not** build again, even though
-  that file already existed in the child's tree (inherited from the root once merged in) — proving the
-  child's diff is computed against its own parent, not against `main`, the same way the earlier fast-checks
-  proof already showed. Commit `1bcf6277`,
-  [run 37746553360](https://github.com/Bharat-Tech-Labs/Enterprise-Search/actions/runs/37746553360).
+- Touched `Temporal` (a different Dockerfile) on the **child** PR (`#347`), stacked on top — the matrix
+  scheduled only `docker-build (temporal-worker)`. Critically, `strapi-mcp` did **not** get scheduled
+  again, even though that file already existed in the child's tree (inherited from the root once merged
+  in) — proving the child's diff is computed against its own parent, not against `main`, the same way the
+  earlier fast-checks proof already showed. That's visible directly in `detect`'s own output on this run,
+  which is what this is actually citing — `docker-build (temporal-worker)` itself shows `cancelled`, not
+  `success`, because a cleanup push to the same branch shortly after (reverting the fixture once the
+  unrelated StrapiMCP bug above was found) cancelled it mid-build via this workflow's own
+  `cancel-in-progress` concurrency group. The scoping decision the test was checking had already been made
+  correctly by `detect` before that cancellation happened. Commit `1bcf6277`,
+  [run 37746553360](https://github.com/Bharat-Tech-Labs/Enterprise-Search/actions/runs/37746553360) (see
+  the `detect` job's logs for the scoping proof; `docker-build`/`fast-checks` show `cancelled`, not a
+  build failure).
 
 One honest side effect: touching `StrapiMCP` re-triggered its already-documented pre-existing lockfile bug
 (see round one) — not a new issue, just an old one firing again because that file got touched. Both test
@@ -189,7 +196,11 @@ all support the newer runtime, and bumped all four pinned versions.
 
 **Commit:** `73889189`.
 
-**Proof:** [run 37737221510](https://github.com/Bharat-Tech-Labs/Enterprise-Search/actions/runs/37737221510) — warning gone, and every job still passed with the new versions.
+**Proof:** [run 37737221510](https://github.com/Bharat-Tech-Labs/Enterprise-Search/actions/runs/37737221510) —
+warning gone. `fast-checks (conflict-types)` and the overall `gate` still show `failure` on this run, but
+that's the same pre-existing, unrelated Node-version test bug from section 5 above, not a regression from
+this bump — every other job (`ui`, `strapi`, `temporal-worker`, `rules-service`, both `docker-build` legs)
+passed cleanly with the new action versions.
 
 ## 7. Caching — one layer kept, one layer tried and honestly reverted
 

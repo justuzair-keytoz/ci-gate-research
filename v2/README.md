@@ -2,7 +2,7 @@
 
 This covers the two follow-up points from the senior review of round one, plus an OSS research pass, plus
 the caching work that came out of watching the gate run. What actually got built from all of this, with
-commits and real run links, is in `../PLAN-V2.md` — read that first if you want the outcome. Everything
+commits and real run links, is in `PLAN-V2.md` — read that first if you want the outcome. Everything
 in this folder is the research and reasoning behind it.
 
 ## Start here if short on time
@@ -14,7 +14,7 @@ in this folder is the research and reasoning behind it.
   wouldn't actually have closed the gap it targeted in this repo's specific architecture (our matrix is
   an *enumerated* list of services, not a generic repo-wide command like cal.com's — flipping the default
   would pay cal.com's "heavy/slow" cost for zero extra coverage). Replaces it with a narrower, cheaper
-  "registration check" instead — this is the version that actually got built, see `../PLAN-V2.md`.
+  "registration check" instead — this is the version that actually got built, see `PLAN-V2.md`.
 
 ## Full docs, in reading order
 
@@ -30,7 +30,7 @@ in this folder is the research and reasoning behind it.
 4. **`oss/awesome-actions-curated-list.md`** — checked a curated Actions list for coverage of either
    question; found none. Documented so nobody else has to re-check it.
 5. **`5-stacked-ci-strategy-survey.md`** — a wider follow-up specifically on PR-stack CI cost (not the
-   safety question — that's answered and built, see `../PLAN-V2.md`). Compares four real strategies found
+   safety question — that's answered and built, see `PLAN-V2.md`). Compares four real strategies found
    as actual shipped code (`ghstack`, `spr`, `git-spice`, plus two real PRs from `pomerium` and `metabase`)
    rather than designing around a single example.
 6. **`6-ci-caching-research.md`** — caching for `fast-checks`, triggered by a direct observation that it
@@ -41,7 +41,7 @@ in this folder is the research and reasoning behind it.
 
 **PR stacks:** GitHub already scopes each PR's diff to its immediate parent by default — no fix needed
 there. The real gap was a safety one, not a cost one: nothing checked whether a stacked PR's parent
-branch had actually passed. Built and proven live on a real two-PR stack — see `../PLAN-V2.md` section 3.
+branch had actually passed. Built and proven live on a real two-PR stack — see `PLAN-V2.md` section 3.
 A *separate* question (redundant CI cost on deep stacks) was researched in depth
 (`5-stacked-ci-strategy-survey.md`) but deliberately not built — that's an efficiency problem, not the
 safety gap that was actually open.
@@ -56,5 +56,5 @@ for why).
 
 ## Status
 
-Done. All of this fed into the actual build — see `../PLAN-V2.md` for what got implemented, which commits,
+Done. All of this fed into the actual build — see `PLAN-V2.md` for what got implemented, which commits,
 and which real test runs prove each piece.
